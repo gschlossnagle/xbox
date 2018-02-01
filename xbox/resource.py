@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import xbox
+import dateutil.parser
 from .decorators import authenticates
 from .exceptions import GamertagNotFound, ClipNotFound, InvalidRequest
 from .proxies import UserProxy
@@ -132,6 +133,34 @@ class GamerProfile(object):
             self.gamertag, self.xuid
         )
 
+    @authenticates
+    def presence(self):
+        '''
+        '''
+
+        return Presence.get_from_user(self)
+      
+
+class Presence(object):
+    '''
+    Represents a user presence object
+    '''
+
+    def __init__(self, user, data):
+        # {u'xuid': u'2535437132633502', u'state': u'Offline', u'lastSeen': {u'timestamp': u'2018-01-31T23:32:29.1269005Z', u'deviceType': u'MCapensis', u'titleName': u'Home', u'titleId': u'750323071'}}
+        self.user = user
+        self.raw_data = data
+        self.state = data['state']
+        self.lastSeen = dateutil.parser.parse(data['lastSeen']['timestamp'])
+        
+
+    @classmethod
+    @authenticates
+    def get_from_user(cls, user):
+        url = 'https://userpresence.xboxlive.com/users/xuid(%s)'
+        resp = xbox.client._get(url % user.xuid)
+        data = resp.json()
+        return cls(user, data)
 
 class Clip(object):
     '''
